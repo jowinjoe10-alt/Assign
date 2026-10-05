@@ -22,14 +22,28 @@ public class TaskController {
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "10") int pageSize) {
 
+               if (page < 1) {
+                   return ResponseEntity.badRequest().body("page must be at least 1");
+               }
+
+               if (pageSize < 1 || pageSize > 100) {
+                   return ResponseEntity.badRequest()
+                           .body("pageSize must be between 1 and 100");
+               }
+
         // Normalize query input
         String query = q == null ? "" : q.trim();
         String searchTerm = "%" + query.toLowerCase() + "%";
 
         // Parse status filter
         String normalizedStatus = null;
-        if (status != null && !status.isEmpty()) {
-            normalizedStatus = TaskStatus.valueOf(status.toUpperCase()).name();
+        if (status != null && !status.isBlank()) {
+            try {
+                normalizedStatus = TaskStatus.valueOf(status.trim().toUpperCase()).name();
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest()
+                        .body("Invalid status: " + status);
+            }
         }
 
         // Query complexity estimation for logging
